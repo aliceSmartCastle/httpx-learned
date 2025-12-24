@@ -135,53 +135,68 @@ __write__ to your watch
 def url_Content(url_link: str = '', needContent: Literal['text', 'change_encoding', 'content', 'post'] = '',
                 new_encoding: str = '', post_dict: dict = None,
                 post_files: Any = None, post_json: Any = None,
-                postContent: bytes = None, originHidden: bool = True,urlHidden:bool =True,headersHidden:bool =True) -> None | str | JSONDecodeError | bytes | Any:
+                postContent: bytes = None, originHidden: bool = True, urlHidden: bool = True,
+                headersHidden: bool = True) -> None | str | JSONDecodeError | bytes | Any:
     match needContent:
         case 'text':  #get the text of the response
             return ResponseUrlState(url_link=url_link).text
         case 'post':  #get the post *form* of the response
 
-            postResponse = ResponseUrlState(url_link=url_link, method=requestMethod.post.name, wayData=post_dict,
-                                            getterWay="params", postFile=post_files, postJson=post_json,
-                                            post_content=postContent).text
-
-            if 'html' not in postResponse:
-
-                parse_request = {'arg': json.loads(postResponse).get('arg'),
-                                 'data': json.loads(postResponse).get('data'),
-                                 'files': json.loads(postResponse).get('files'),
-                                 'form': json.loads(postResponse).get('form'),
-                                 'json': json.loads(postResponse).get('json'),
-                                 'origin': json.loads(postResponse).get('origin'),
-                                 'url': json.loads(postResponse).get('url'),
-                                 'headers': json.loads(postResponse).get('headers'),
-                                 }
+            information_Accept = ResponseUrlState(url_link=url_link, method=requestMethod.post.name, wayData=post_dict,
+                                                  getterWay="params", postFile=post_files, postJson=post_json,
+                                                  post_content=postContent)
 
 
-                def valid_keyCheck(datas: dict = None):
-                    if originHidden:
-                        datas.pop('origin')
-                    if urlHidden:
-                        datas.pop('url')
-                    if headersHidden:
-                        datas.pop('headers')
-                    request_it = {}
-                    for i, v in datas.items():
-                        if (v == {}) or (v is None) or (v == ''):
-                            ...
-                        else:
-                         request_it.update({i:v})
-                    return request_it
 
-                pretty_dict = valid_keyCheck(parse_request)
-                return pretty_dict
+            post_type = information_Accept.headers.get('content-type')
+
+
+
+            acceptType = ['application/json']
+
+            if post_type in acceptType:
+               
+
+                    json_format_post = information_Accept.json()
+
+                    parse_request = {'arg': json_format_post.get('arg'),
+                                     'data': json_format_post.get('data'),
+                                     'files': json_format_post.get('files'),
+                                     'form': json_format_post.get('form'),
+                                     'json': json_format_post.get('json'),
+                                     'origin': json_format_post.get('origin'),
+                                     'url': information_Accept.url,
+                                     'headers': information_Accept.headers,
+                                     
+                                     }
+                
+                  
+
+                    def valid_keyCheck(datas: dict = None):
+                        if originHidden:
+                            datas.pop('origin')
+                        if urlHidden:
+                            datas.pop('url')
+                        if headersHidden:
+                            datas.pop('headers')
+                        request_it = {}
+                        for i, v in datas.items():
+                            if (v == {}) or (v is None) or (v == ''):
+                                ...
+                            else:
+                                request_it.update({i: v})
+                        return request_it
+
+                    pretty_dict = valid_keyCheck(parse_request)
+                    return pretty_dict
+                
 
             else:
                 return "post request file is not json"
 
-       case 'content':  #get the content of the response
+        case 'content':  #get the content of the response
             return ResponseUrlState(url_link=url_link).content
-       case 'change_encoding':  #change the encoding of the response
+        case 'change_encoding':  #change the encoding of the response
             ResponseUrlState(url_link=url_link).encoding = new_encoding
             if new_encoding is not None:
                 return new_encoding
@@ -329,7 +344,63 @@ __detail__ information is seen to [step 8 note ! ](#note-in-there)
 _**__step 9 finish__**_
 ***
 ## Step 10 : Sending Binary Request Data
-  
+__if you__ want to send binary data to sever
+``` python
+  print(url_Content(needContent='post',postContent=b'welcome to python'))
+```
+__success__ you can receive the data of JSON information
+__else__ you will get the error information
+_**__step 10 finish__**_
+***
+## Step 11 : Response Status Codes
+__construct__ the new function
+``` python
+def status_code(url_link: str = '', extra_address: str = '') -> None | HTTPStatusError | Literal[codes.OK]:
+    response_apply = ResponseUrlState(url_link=url_link, method=requestMethod.get.name, extra_address=extra_address)
+    response_status = response_apply.status_code
+
+
+    if response_status > 300:
+        try:
+            response_apply.raise_for_status()
+        except HTTPStatusError as err:
+
+            return err
+
+    else:
+        assert (response_status == codes.OK)
+       return response_status
+   ```
+__checking__ network connecting status code
+__using__ this function
+``` python
+  print(status_code())
+```
+__if__ the network connecting is no problem  
+__bash__ will input the status code
+__else__ bash will input the error info
+_**__step 11 finish__**_
+***
+## Step 12 :  Response Headers
+__construct__ the fetch response headers function
+``` python
+  def http_headers(url_link: str = '', content_type: bool = False):
+    headInfo = ResponseUrlState(url_link=url_link, method=requestMethod.get.name)
+    contentType = headInfo.headers.get('content-type')
+    if content_type:
+        return contentType
+    else:
+        return headInfo.headers
+```
+__Getter__ any url headers information  
+__or__ content_type information
+``` python
+ print(http_headers(url_link='https://www.python.org/'))
+ ```
+__it's__ calling the function true method  
+_**__step 12 finish__**_
+***
+
 
 
 

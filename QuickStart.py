@@ -105,46 +105,61 @@ def ResponseUrlState(url_link: str = '', method: str = 'get', wayData: dict = No
 def url_Content(url_link: str = '', needContent: Literal['text', 'change_encoding', 'content', 'post'] = '',
                 new_encoding: str = '', post_dict: dict = None,
                 post_files: Any = None, post_json: Any = None,
-                postContent: bytes = None, originHidden: bool = True,urlHidden:bool =True,headersHidden:bool =True) -> None | str | JSONDecodeError | bytes | Any:
+                postContent: bytes = None, originHidden: bool = True, urlHidden: bool = True,
+                headersHidden: bool = True) -> None | str | JSONDecodeError | bytes | Any:
     match needContent:
         case 'text':  #get the text of the response
             return ResponseUrlState(url_link=url_link).text
         case 'post':  #get the post *form* of the response
 
-            postResponse = ResponseUrlState(url_link=url_link, method=requestMethod.post.name, wayData=post_dict,
-                                            getterWay="params", postFile=post_files, postJson=post_json,
-                                            post_content=postContent).text
-
-            if 'html' not in postResponse:
-
-                parse_request = {'arg': json.loads(postResponse).get('arg'),
-                                 'data': json.loads(postResponse).get('data'),
-                                 'files': json.loads(postResponse).get('files'),
-                                 'form': json.loads(postResponse).get('form'),
-                                 'json': json.loads(postResponse).get('json'),
-                                 'origin': json.loads(postResponse).get('origin'),
-                                 'url': json.loads(postResponse).get('url'),
-                                 'headers': json.loads(postResponse).get('headers'),
-                                 }
+            information_Accept = ResponseUrlState(url_link=url_link, method=requestMethod.post.name, wayData=post_dict,
+                                                  getterWay="params", postFile=post_files, postJson=post_json,
+                                                  post_content=postContent)
 
 
-                def valid_keyCheck(datas: dict = None):
-                    if originHidden:
-                        datas.pop('origin')
-                    if urlHidden:
-                        datas.pop('url')
-                    if headersHidden:
-                        datas.pop('headers')
-                    request_it = {}
-                    for i, v in datas.items():
-                        if (v == {}) or (v is None) or (v == ''):
-                            ...
-                        else:
-                         request_it.update({i:v})
-                    return request_it
 
-                pretty_dict = valid_keyCheck(parse_request)
-                return pretty_dict
+            post_type = information_Accept.headers.get('content-type')
+
+
+
+            acceptType = ['application/json']
+
+            if post_type in acceptType:
+
+
+                    json_format_post = information_Accept.json()
+
+                    parse_request = {'arg': json_format_post.get('arg'),
+                                     'data': json_format_post.get('data'),
+                                     'files': json_format_post.get('files'),
+                                     'form': json_format_post.get('form'),
+                                     'json': json_format_post.get('json'),
+                                     'origin': json_format_post.get('origin'),
+                                     'url': information_Accept.url,
+                                     'headers': information_Accept.headers,
+
+                                     }
+
+
+
+                    def valid_keyCheck(datas: dict = None):
+                        if originHidden:
+                            datas.pop('origin')
+                        if urlHidden:
+                            datas.pop('url')
+                        if headersHidden:
+                            datas.pop('headers')
+                        request_it = {}
+                        for i, v in datas.items():
+                            if (v == {}) or (v is None) or (v == ''):
+                                ...
+                            else:
+                                request_it.update({i: v})
+                        return request_it
+
+                    pretty_dict = valid_keyCheck(parse_request)
+                    return pretty_dict
+
 
             else:
                 return "post request file is not json"
@@ -175,13 +190,15 @@ def fetch_json(url_link: str = '') -> JSONDecodeError | Any:
         return e
 
 
-def status_code(url_link: str = '', extra_address: str = '') -> None | HTTPStatusError | int:
+def status_code(url_link: str = '', extra_address: str = '') -> None | HTTPStatusError | Literal[codes.OK]:
     response_apply = ResponseUrlState(url_link=url_link, method=requestMethod.get.name, extra_address=extra_address)
     response_status = response_apply.status_code
+
     if response_status > 300:
         try:
             response_apply.raise_for_status()
         except HTTPStatusError as err:
+
             return err
 
     else:
@@ -189,13 +206,23 @@ def status_code(url_link: str = '', extra_address: str = '') -> None | HTTPStatu
         return response_status
 
 
+def http_headers(url_link: str = '', content_type: bool = False):
+    headInfo = ResponseUrlState(url_link=url_link, method=requestMethod.get.name)
+    contentType = headInfo.headers.get('content-type')
+    if content_type:
+        return contentType
+    else:
+        return headInfo.headers
+
+
 if __name__ == '__main__':
     my_UA = User_Agent()
-    # print(ResponseUrlState(method=requestMethod.get.name,headers={"cookie":"best food"},url_link='https://www.python.org/'))
+    # print(ResponseUrlState(method=requestMethod.get.name,headers={"cookie":"best food"},
+    # url_link='https://www.python.org/'))
     files_here = open_file(file_name='pyproject.toml', file_key='upload-files')
     json_test = open_json(file_name="hello.json", pretty=False)
-    #print(status_code(url_link='https://www.python.org/', extra_address='jobs/helps'))
+    print(http_headers(url_link='https://www.python.org/'))
 
-    print(url_Content(needContent='change_encoding',new_encoding='UTF-16',postContent=b'welcome to python'))
+    #print(url_Content(needContent='post', postContent=b'hello world!', headersHidden=False))
 #print(binary_data(url_link='https://www.python.org/static/community_logos/python-logo.png'))
 #print(fetch_json(url_link='https://dummyjson.com/test'))
