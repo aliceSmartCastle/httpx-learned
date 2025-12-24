@@ -152,11 +152,9 @@ def url_Content(url_link: str = '', needContent: Literal['text', 'change_encodin
         case 'content':  #get the content of the response
             return ResponseUrlState(url_link=url_link).content
         case 'change_encoding':  #change the encoding of the response
-            native_encodings = ResponseUrlState(url_link=url_link).encoding
-
-            if native_encodings is not None:
-                native_encodings = new_encoding
-                return native_encodings
+            ResponseUrlState(url_link=url_link).encoding = new_encoding
+            if new_encoding is not None:
+                return new_encoding
             else:
                 return 'encoding  changed failed'
         case '' | _:  #default return the response encoding
@@ -198,6 +196,6 @@ if __name__ == '__main__':
     json_test = open_json(file_name="hello.json", pretty=False)
     #print(status_code(url_link='https://www.python.org/', extra_address='jobs/helps'))
 
-    print(url_Content(needContent='post',postContent=b'welcome to python'))
+    print(url_Content(needContent='change_encoding',new_encoding='UTF-16',postContent=b'welcome to python'))
 #print(binary_data(url_link='https://www.python.org/static/community_logos/python-logo.png'))
 #print(fetch_json(url_link='https://dummyjson.com/test'))
